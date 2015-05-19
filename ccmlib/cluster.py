@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import shutil
+import sys
 import time
 
 from ccmlib import common, repository
@@ -196,6 +197,7 @@ class Cluster(object):
         return tokens
 
     def remove(self, node=None):
+        print >> sys.stderr, "Removing cluster."
         if node is not None:
             if not node.name in self.nodes:
                 return
@@ -236,6 +238,7 @@ class Cluster(object):
                 node.show(only_status=True)
 
     def start(self, no_wait=False, verbose=False, wait_for_binary_proto=False, wait_other_notice=False, jvm_args=[], profile_options=None):
+        print >> sys.stderr, "Starting cluster. jvm_args: " + str(jvm_args)
         if wait_other_notice:
             marks = [ (node, node.mark_log()) for node in list(self.nodes.values()) if node.is_running() ]
 
@@ -254,7 +257,7 @@ class Cluster(object):
         else:
             for node, p, mark in started:
                 try:
-                    node.watch_log_for("Listening for thrift clients...", process=p, verbose=verbose, from_mark=mark)
+                    node.watch_log_for("Starting listening for CQL clients", process=p, verbose=verbose, from_mark=mark)
                 except RuntimeError:
                     return None
 
@@ -286,8 +289,11 @@ class Cluster(object):
 
     def stop(self, wait=True, gently=True):
         not_running = []
+        print >> sys.stderr, "Number of nodes: " + str(len(self.nodes.values()))
         for node in list(self.nodes.values()):
+            print >> sys.stderr, "Stopping node: " + str(node.name)
             if not node.stop(wait, gently=gently):
+                print >> sys.stderr, "Not running append: " + str(node.name)
                 not_running.append(node)
         return not_running
 

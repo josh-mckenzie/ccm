@@ -435,6 +435,7 @@ class Node(object):
           - replace_token: start the node with the -Dcassandra.replace_token option.
           - replace_address: start the node with the -Dcassandra.replace_address option.
         """
+        print >> sys.stderr, "Starting node with jvm_args: " + str(jvm_args)
         # Validate Windows env
         if common.is_win() and not common.is_ps_unrestricted() and self.cluster.version() >= '2.1':
             raise NodeError("PS Execution Policy must be unrestricted when running C* 2.1+")
@@ -508,6 +509,7 @@ class Node(object):
         if common.is_win():
             self.__clean_win_pid()
             self._update_pid(process)
+            print >> sys.stderr, "Started node with pid: " + str(self.pid)
         elif update_pid:
             self._update_pid(process)
 
@@ -546,9 +548,13 @@ class Node(object):
                 # We have recurring issues with nodes not stopping / releasing files in the CI
                 # environment so it makes more sense just to murder it hard since there's
                 # really little downside.
+                print >> sys.stderr, "(ccm.node.stop)Killing node (taskkill) with pid: " + str(self.pid)
                 os.system("taskkill /F /PID " + str(self.pid))
                 if self._find_pid_on_windows():
                     print_("WARN: Failed to terminate node: {0} with pid: {1}".format(self.name, self.pid))
+                    print >> sys.stderr, '(ccm.node.stop)WARN: Failed to terminate node: ' + str(self.name) + ' with pid: ' + str(self.pid)
+                else:
+                    print >> sys.stderr, "(ccm.node.stop)Checked for pid still running and it's not. Carry on."
             else:
                 if gently:
                     os.kill(self.pid, signal.SIGTERM)
@@ -575,6 +581,7 @@ class Node(object):
             else:
                 return True
         else:
+            print >> sys.stderr, "Self not running for node: " + self.name + ". Returning false."
             return False
 
     def nodetool(self, cmd, capture_output=True):
@@ -1193,8 +1200,10 @@ class Node(object):
     def __update_status_win(self):
         if self._find_pid_on_windows():
             if self.status == Status.DOWN or self.status == Status.UNINITIALIZED:
+                print >> sys.stderr, "Setting status to up"
                 self.status = Status.UP
         else:
+            print >> sys.stderr, "Setting status to down"
             self.status = Status.DOWN
 
     def _find_pid_on_windows(self):
