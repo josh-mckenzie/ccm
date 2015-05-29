@@ -547,9 +547,13 @@ class Node(object):
                 # We have recurring issues with nodes not stopping / releasing files in the CI
                 # environment so it makes more sense just to murder it hard since there's
                 # really little downside.
+                print >> sys.stderr, "(ccm.node.stop): Killing with taskkill /F /PID " + str(self.pid)
                 os.system("taskkill /F /PID " + str(self.pid))
                 if self._find_pid_on_windows():
                     print_("WARN: Failed to terminate node: {0} with pid: {1}".format(self.name, self.pid))
+                    print >> sys.stderr, "(ccm.node.stop): Failed to terminate node with pid: " + str(self.pid)
+                else:
+                    print >> sys.stderr, "(ccm.node.stop): Successfully terminated node with pid: " + str(self.pid)
             else:
                 if gently:
                     os.kill(self.pid, signal.SIGTERM)
