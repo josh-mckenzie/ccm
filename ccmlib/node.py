@@ -537,7 +537,10 @@ class Node(object):
           - gently: Let Cassandra clean up and shut down properly. Otherwise do
             a 'kill -9' which shuts down faster.
         """
+        print_("Stop on node: {0}".format(self.name), file=sys.stderr)
         if self.is_running():
+            print_("Stop: is running. continue", file=sys.stderr)
+
             if wait_other_notice:
                 marks = [(node, node.mark_log()) for node in list(self.cluster.nodes.values()) if node.is_running() and node is not self]
 
@@ -580,6 +583,7 @@ class Node(object):
             else:
                 return True
         else:
+            print_("Stop: not running. ret False", file=sys.stderr)
             return False
 
     def nodetool(self, cmd, capture_output=True):

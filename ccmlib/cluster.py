@@ -212,7 +212,9 @@ class Cluster(object):
             print_("clearing path: {0}".format(node.get_path()), file=sys.stderr, flush=True)
             shutil.rmtree(node.get_path())
         else:
+            print_("cluster.remove, node is none. doing self.stop, cluster name: {0}".format(self.name), file=sys.stderr)
             self.stop(gently=False)
+            print_("cluster.remove, rmtree on path: {0}".format(self.get_path()), file=sys.stderr)
             shutil.rmtree(self.get_path())
 
     def clear(self):
