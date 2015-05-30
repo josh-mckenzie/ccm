@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import shutil
+import sys
 import time
 
 from ccmlib import common, repository
@@ -197,14 +198,18 @@ class Cluster(object):
 
     def remove(self, node=None):
         if node is not None:
+            print_("cluster.remove, node is not None, node name: {0}".format(node.name), file=sys.stderr, flush=True)
             if not node.name in self.nodes:
+                print_("name not in nodes, ignoring", file=sys.stderr, flush=True)
                 return
 
             del self.nodes[node.name]
             if node in self.seeds:
                 self.seeds.remove(node)
             self._update_config()
+            print_("stopping node: {0}".format(node.name), file=sys.stderr, flush=True)
             node.stop(gently=False)
+            print_("clearing path: {0}".format(node.get_path()), file=sys.stderr, flush=True)
             shutil.rmtree(node.get_path())
         else:
             self.stop(gently=False)
