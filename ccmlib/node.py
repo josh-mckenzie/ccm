@@ -525,7 +525,6 @@ class Node(object):
         if common.is_win():
             self.__clean_win_pid()
             self._update_pid(process)
-            print_("Started: {0} with pid: {1}".format(self.name, self.pid), file=sys.stderr, flush=True)
         elif update_pid:
             self._update_pid(process)
 
@@ -556,14 +555,19 @@ class Node(object):
                 marks = [(node, node.mark_log()) for node in list(self.cluster.nodes.values()) if node.is_running() and node is not self]
 
             if common.is_win():
-                # Just taskkill the instance, don't bother trying to shut it down gracefully.
-                # Node recovery should prevent data loss from hard shutdown.
-                # We have recurring issues with nodes not stopping / releasing files in the CI
-                # environment so it makes more sense just to murder it hard since there's
-                # really little downside.
-                os.system("taskkill /F /PID " + str(self.pid))
-                if self._find_pid_on_windows():
-                    print_("WARN: Failed to terminate node: {0} with pid: {1}".format(self.name, self.pid))
+                args = [os.path.join(self.get_bin_dir(), 'stop-server.bat'), '-p', os.path.join(self.get_path(), 'cassandra.pid'), '-s']
+                process = subprocess.Popen(args, cwd=self.get_bin_dir())
+
+                # Try for 10 seconds, hard-kill if we fail
+                tries = 0
+                while process.poll() is None and tries < 10:
+                    tries = tries + 1
+                    time.sleep(1)
+
+                if process.poll() is None:
+                    process.kill()
+                    print_("WARN: Failed to terminate node: {0} with pid: {1}. Using taskkill /F".format(self.name, self.pid))
+                    os.system("taskkill /F /PID " + str(self.pid))
             else:
                 if gently:
                     os.kill(self.pid, signal.SIGTERM)
